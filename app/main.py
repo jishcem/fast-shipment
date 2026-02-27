@@ -1,0 +1,15 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
+from app.api.router import master_router
+from app.database.session import create_db_and_tables
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(router=master_router)
