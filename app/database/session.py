@@ -2,9 +2,9 @@ from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost/fastship"
+from app.config import db_settings
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(db_settings.db_connection_string, echo=True)
 
 async def create_db_and_tables():
     async with engine.begin() as conn:
