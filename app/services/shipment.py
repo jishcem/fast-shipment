@@ -1,22 +1,25 @@
 from datetime import datetime, timedelta
 
-from sqlmodel import Session, select
+from sqlmodel import select
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.models import Shipment, ShipmentStatus
 from ..api.schemas.shipment import ShipmentCreate, ShipmentUpdate, ShipmentPatch
 
 class ShipmentService():
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    def get_all(self) -> list[Shipment]:
-        return self.session.exec(select(Shipment)).all()
+    async def get_all(self) -> list[Shipment]:
+        result = await self.session.execute(select(Shipment))
+        shipments = result.scalars().all()
+        return shipments
     
-    def get(self, id) -> Shipment:
-        return self.session.get(Shipment, id)
+    async def get(self, id) -> Shipment:
+        return await self.session.get(Shipment, id)
 
-    def create(self, shipment_create: ShipmentCreate) -> Shipment:
+    async def create(self, shipment_create: ShipmentCreate) -> Shipment:
         new_shipment = Shipment(
             **shipment_create.model_dump(),
             status=ShipmentStatus.placed,
@@ -24,39 +27,39 @@ class ShipmentService():
         )        
 
         self.session.add(new_shipment)
-        self.session.commit()
-        self.session.refresh(new_shipment)
+        await self.session.commit()
+        await self.session.refresh(new_shipment)
         return new_shipment
     
-    def update(self, id: int, shipment_update: ShipmentUpdate) -> Shipment:
-        shipment = self.get(id)
+    async def update(self, id: int, shipment_update: ShipmentUpdate) -> Shipment:
+        shipment = await self.get(id)
 
         if shipment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No shipment found")
 
         shipment.sqlmodel_update(shipment_update)
         self.session.add(shipment)
-        self.session.commit()
-        self.session.refresh(shipment)
+        await self.session.commit()
+        await self.session.refresh(shipment)
         return shipment
     
-    def patch(self, id: int, shipment_patch: ShipmentPatch):
-        shipment = self.get(id)
+    async def patch(self, id: int, shipment_patch: ShipmentPatch):
+        shipment = await self.get(id)
 
         if shipment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No shipment found")
 
         shipment.sqlmodel_update(shipment_patch.model_dump(exclude_unset=True))
         self.session.add(shipment)
-        self.session.commit()
-        self.session.refresh(shipment)
+        await self.session.commit()
+        await self.session.refresh(shipment)
         return shipment
     
-    def delete(self, id: int) -> None:
-        shipment = self.get(id)
+    async def delete(self, id: int) -> None:
+        shipment = await self.get(id)
 
         if shipment is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No shipment found")
         
-        self.session.delete(shipment)
-        self.session.commit()
+        await self.session.delete(shipment)
+        await self.session.commit()

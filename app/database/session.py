@@ -1,15 +1,22 @@
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost/fastship"
 
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+engine = create_async_engine(DATABASE_URL, echo=True)
 
-def create_db_and_tables():
-    from .models import Shipment  # noqa: F401
-    SQLModel.metadata.create_all(engine)
+async def create_db_and_tables():
+    async with engine.begin() as conn:
+        from .models import Shipment  # noqa: F401    
+        await conn.run_sync(SQLModel.metadata.create_all)
 
-def get_session():
-    with Session(engine) as session:
+async def get_session():
+    async_session = sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False
+    )
+
+    async with async_session() as session:
         yield session
