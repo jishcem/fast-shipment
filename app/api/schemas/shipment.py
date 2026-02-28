@@ -17,3 +17,31 @@ class ShipmentCreate(ShipmentBase):
             ]
         }
     }
+
+class ShipmentUpdate(ShipmentBase):
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "content": "Jacket",
+                    "weight": 1.0,
+                    "destination": 34567
+                }
+            ]
+        }
+    }
+
+class ShipmentPatch(BaseModel):
+    content: str | None = Field(max_length=30, default=None)
+    weight: float | None = Field(lt=25, ge=1, default=None)
+    destination: int | None = Field(default=None)
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "content": "Uduthuni"                    
+                }
+            ]
+        }
+    }    
